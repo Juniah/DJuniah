@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>中译中</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "微软雅黑", sans-serif;
+        }
+
+        body {
+            background: #fff9d0;
+            min-height: 100vh;
+            padding: 40px 15px;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+            background: rgba(255,255,255,0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 24px;
+            padding: 35px 30px;
+            box-shadow: 0 8px 30px rgba(255, 204, 0, 0.18);
+            border: 1px solid rgba(255,255,255,0.9);
+            position: relative;
+            z-index: 10;
+        }
+
+        h1 {
+            text-align: center;
+            color: #e6b800;
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 30px;
+            letter-spacing: 1px;
+        }
+
+        .item {
+            margin-bottom: 22px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 500;
+            color: #cc9900;
+            font-size: 15px;
+        }
+
+        select, textarea {
+            width: 100%;
+            padding: 14px 16px;
+            border: none;
+            border-radius: 16px;
+            font-size: 16px;
+            background: rgba(255,255,255,0.85);
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.08);
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        select:focus, textarea:focus {
+            box-shadow: 0 0 0 3px rgba(255, 204, 0, 0.25);
+        }
+
+        textarea {
+            min-height: 140px;
+            resize: none;
+            line-height: 1.7;
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 16px;
+            font-size: 17px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #ffd300, #ffb700);
+            color: #fff;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(255, 187, 0, 0.35);
+            transition: all 0.2s ease;
+        }
+
+        button:active {
+            transform: scale(0.98);
+            box-shadow: 0 2px 8px rgba(255, 187, 0, 0.25);
+        }
+
+        .res {
+            margin-top: 25px;
+            padding: 22px;
+            background: rgba(255, 248, 210, 0.85);
+            backdrop-filter: blur(8px);
+            border-radius: 20px;
+            display: none;
+            line-height: 1.9;
+            color: #333;
+            font-size: 15px;
+            border: 1px solid rgba(255, 221, 100, 0.4);
+        }
+
+        .loading {
+            text-align: center;
+            color: #cc9900;
+            font-size: 16px;
+            display: none;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>中译中</h1>
+
+        <div class="item">
+            <label>选择当前语境场景</label>
+            <select id="scene">
+                <option value="约会快要结束准备走了">约会快要结束准备走了</option>
+                <option value="网上微信线上聊天">网上微信线上聊天</option>
+                <option value="现实外面见面聊天">现实外面见面聊天</option>
+                <option value="和长辈亲戚说话">和长辈亲戚说话</option>
+                <option value="和同事领导沟通">和同事领导沟通</option>
+                <option value="暧昧拉扯阶段">暧昧拉扯阶段</option>
+                <option value="吵架冷战中">吵架冷战中</option>
+            </select>
+        </div>
+
+        <div class="item">
+            <label>粘贴对方说的原话</label>
+            <textarea id="words" placeholder="把对方发给你的话粘贴在这里..."></textarea>
+        </div>
+
+        <button onclick="getAIResult()">一键AI解析潜台词</button>
+
+        <div class="loading" id="load">AI正在分析中，请稍等...</div>
+        <div class="res" id="resBox"></div>
+    </div>
+
+<script>
+// 已填入你的API Key
+const API_KEY = "ark-b2491f1d-38b7-4a21-9dc4-37711ba5ca99-3b3ea";
+
+async function getAIResult(){
+    let scene = document.getElementById("scene").value;
+    let words = document.getElementById("words").value.trim();
+    let load = document.getElementById("load");
+    let resBox = document.getElementById("resBox");
+
+    if(!words){
+        alert("请粘贴对方说的原话");
+        return;
+    }
+
+    // 触发彩蛋：输入「杜冰冰」自动跳转
+    if(words.includes("杜冰冰")){
+        window.location.href = "egg.html";
+        return;
+    }
+
+    load.style.display = "block";
+    resBox.style.display = "none";
+
+    let prompt = `
+你是高情商社交话术解析助手，根据给定语境和对方原话，严格分三点回答：
+1. 表面意思
+2. 真实潜台词
+3. 给两条高情商回复选项（稳妥一条、拉近关系一条）
+
+语境：${scene}
+对方原话：${words}
+用口语化、简短易懂的文字，不要太官方。
+    `;
+
+    try{
+        let res = await fetch("https://ark.cn-beijing.volces.com/api/v3/chat/completions",{
+            method:"POST",
+            headers:{
+                "Content-Type":"application/json",
+                "Authorization":"Bearer " + API_KEY
+            },
+            body:JSON.stringify({
+                // 用你截图里的模型ID
+                model:"doubao-1-5-lite-32k-250115",
+                messages:[{"role":"user","content":prompt}]
+            })
+        });
+
+        let data = await res.json();
+        if(data.error) throw new Error(data.error.message);
+
+        let ans = data.choices[0].message.content;
+        load.style.display = "none";
+        resBox.style.display = "block";
+        resBox.innerText = ans;
+
+    }catch(e){
+        load.style.display = "none";
+        alert("AI调用失败：" + e.message);
+    }
+}
+</script>
+</body>
+</html>
